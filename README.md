@@ -12,9 +12,10 @@ This MCP server gives Claude access to finance news from major sources including
 - MarketWatch
 - Financial Times
 
-The server provides two tools:
+The server provides three tools:
 1. **get_latest_finance_news** - Fetch the latest news from all sources or a specific source
 2. **search_finance_news** - Search across all feeds for articles matching a keyword
+3. **get_seekingalpha_ticker_thesis** - Gather a ticker's latest Seeking Alpha analysis articles to build a Buy/Hold/Sell view
 
 ## Installation
 
@@ -92,6 +93,26 @@ Search for articles matching a keyword across all feeds.
 search_finance_news(query="bitcoin", limit=5)
 ```
 
+### get_seekingalpha_ticker_thesis
+
+Collect a ticker's latest Seeking Alpha analysis articles (up to 10) so Claude can write the core elements of a Buy/Strong Buy, Hold and Sell/Strong Sell thesis.
+
+**Parameters:**
+- `ticker` (str, required): Stock symbol, e.g. `AAPL` (page: `https://seekingalpha.com/symbol/<ticker>`)
+- `limit` (int, default=10): Articles to use, 1-10
+
+**Returns:** `articles` (title, author, published, url, summary, rating_cue), a bullish/neutral/bearish `stance_tally`, `warnings`, and `instructions` for writing the thesis. `rating_cue` is a keyword heuristic, not a Seeking Alpha rating.
+
+**Data providers:** Seeking Alpha blocks scraping of its ticker pages, article pages and JSON API with a captcha, so this tool does not scrape them.
+- Default: the public feed `https://seekingalpha.com/api/sa/combined/<ticker>.xml`. No key needed, but it gives titles only, and few items are analysis articles.
+- With `SA_RAPIDAPI_KEY` set: a licensed Seeking Alpha API on RapidAPI (host override: `SA_RAPIDAPI_HOST`), which adds article summaries. This path has not been tested against a live key.
+
+```json
+"env": { "SA_RAPIDAPI_KEY": "your-key" }
+```
+
+Output is a summary of third-party opinion, not investment advice.
+
 ## Implementation Details
 
 - **No caching**: Fetches RSS feeds on-demand for real-time updates
@@ -104,6 +125,8 @@ search_finance_news(query="bitcoin", limit=5)
 ```
 example/
 ├── main.py             # MCP server implementation
+├── seekingalpha.py     # Seeking Alpha ticker providers and parsing
+├── tests/              # pytest tests
 ├── pyproject.toml      # Project dependencies
 ├── uv.lock             # Dependency lock file
 └── README.md           # This file

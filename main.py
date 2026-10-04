@@ -10,6 +10,8 @@ import feedparser
 import httpx
 from fastmcp import FastMCP
 
+from seekingalpha import build_thesis_inputs
+
 # Initialize MCP server
 mcp = FastMCP("Finance News RSS Server")
 
@@ -155,6 +157,24 @@ def search_finance_news(query: str, limit: int = 10) -> list[dict[str, Any]]:
             matching_articles.append(article)
 
     return matching_articles[:limit]
+
+
+@mcp.tool()
+def get_seekingalpha_ticker_thesis(ticker: str, limit: int = 10) -> dict[str, Any]:
+    """Gather a ticker's latest Seeking Alpha analysis articles to build a Buy/Hold/Sell view.
+
+    Returns the articles (title, author, date, url, summary, keyword-based rating cue), a
+    bullish/neutral/bearish tally, and instructions for writing the thesis. Set
+    SA_RAPIDAPI_KEY for article summaries; without it only titles are available.
+
+    Args:
+        ticker: Stock symbol, e.g. "AAPL" (see https://seekingalpha.com/symbol/<ticker>)
+        limit: Number of articles to use, 1-10 (default: 10)
+
+    Returns:
+        Dict with ticker, provider, stance_tally, articles, warnings and instructions
+    """
+    return build_thesis_inputs(ticker, limit)
 
 
 if __name__ == "__main__":
